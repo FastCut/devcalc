@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-folder"></i> Moje Projekty</h1>
+        <a href="{{ url_for('calculator.new_project') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nowy Projekt
+        </a>
+    </div>
+
+    {% if projects %}
+    <div class="row">
+        {% for project in projects %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ project.name }}</h5>
+                    <p class="card-text text-muted">
+                        <small>
+                            <i class="bi bi-calendar"></i>
+                            {{ project.updated_at.strftime('%d.%m.%Y %H:%M') }}
+                        </small>
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><strong>PUM:</strong> {{ "%.2f"|format(project.pum_area) }} m²</li>
+                        <li><strong>Lokale:</strong> {{ project.units_count }}</li>
+                        <li><strong>Cena sprzedaży:</strong> {{ "%.2f"|format(project.sale_price_per_sqm) }} PLN/m²</li>
+                    </ul>
+
+                    {% set calc = project.calculations.order_by_desc('created_at').first() %}
+                    {% if calc %}
+                    <div class="alert alert-sm {{ 'alert-success' if calc.npv >= 0 else 'alert-danger' }} py-2">
+                        <strong>NPV:</strong> {{ "{:,.2f}".format(calc.npv) }} PLN<br>
+                        <strong>IRR:</strong> {{ "%.2f"|format(calc.irr) }}%
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="btn-group w-100" role="group">
+                        <a href="{{ url_for('calculator.view_project', project_id=project.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Podgląd
+                        </a>
+                        <a href="{{ url_for('calculator.edit_project', project_id=project.id) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-pencil"></i> Edytuj
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <h4><i class="bi bi-info-circle"></i> Brak projektów</h4>
+        <p>Nie masz jeszcze żadnych projektów. Utwórz swój pierwszy projekt deweloperski!</p>
+        <a href="{{ url_for('calculator.new_project') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Utwórz Pierwszy Projekt
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

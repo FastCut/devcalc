@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-cash-stack"></i> Baza Kosztów Jednostkowych</h1>
+        <a href="{{ url_for('costs.add_cost') }}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Dodaj Koszt
+        </a>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i>
+        <strong>Informacja:</strong> W tej sekcji możesz zarządzać domyślnymi kosztami jednostkowymi,
+        które będą wykorzystywane podczas tworzenia nowych projektów.
+    </div>
+
+    {% for category, costs in categories.items() %}
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-folder"></i>
+                {{ category_names.get(category, category) }}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nazwa</th>
+                            <th>Wartość Domyślna</th>
+                            <th>Jednostka</th>
+                            <th>Zakres</th>
+                            <th>Opis</th>
+                            <th class="text-end">Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cost in costs %}
+                        <tr>
+                            <td><strong>{{ cost.name }}</strong></td>
+                            <td>{{ "%.2f"|format(cost.default_value) }}</td>
+                            <td><span class="badge bg-secondary">{{ cost.unit }}</span></td>
+                            <td>
+                                {% if cost.min_value and cost.max_value %}
+                                    {{ "%.2f"|format(cost.min_value) }} - {{ "%.2f"|format(cost.max_value) }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td><small class="text-muted">{{ cost.description or '-' }}</small></td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('costs.edit_cost', cost_id=cost.id) }}" class="btn btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('costs.delete_cost', cost_id=cost.id) }}" class="d-inline"
+                                          onsubmit="return confirm('Czy na pewno chcesz usunąć ten koszt?');">
+                                        <button type="submit" class="btn btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="mb-4">
+        <a href="{{ url_for('calculator.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Powrót do projektów
+        </a>
+    </div>
+</div>
+{% endblock %}

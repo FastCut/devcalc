@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="mb-4">
+        {% if mode == 'new' %}
+        <i class="bi bi-plus-circle"></i> Nowy Projekt
+        {% else %}
+        <i class="bi bi-pencil"></i> Edytuj Projekt: {{ project.name }}
+        {% endif %}
+    </h1>
+
+    <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+
+        <!-- Nazwa projektu -->
+        <div class="card mb-3">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Identyfikacja</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    {{ form.name.label(class="form-label") }}
+                    {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                    {% if form.name.errors %}
+                        <div class="invalid-feedback">{{ form.name.errors[0] }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- A. Dane działki i przychody -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">A. Dane Działki i Przychody</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.plot_area.label(class="form-label") }}
+                        {{ form.plot_area(class="form-control input-highlight") }}
+                        {% if form.plot_area.errors %}
+                            <div class="invalid-feedback d-block">{{ form.plot_area.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.plot_price_per_sqm.label(class="form-label") }}
+                        {{ form.plot_price_per_sqm(class="form-control input-highlight") }}
+                        {% if form.plot_price_per_sqm.errors %}
+                            <div class="invalid-feedback d-block">{{ form.plot_price_per_sqm.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.pum_area.label(class="form-label") }}
+                        {{ form.pum_area(class="form-control input-highlight") }}
+                        {% if form.pum_area.errors %}
+                            <div class="invalid-feedback d-block">{{ form.pum_area.errors[0] }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Tylko powierzchnia użytkowa mieszkań (bez części wspólnych)</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.units_count.label(class="form-label") }}
+                        {{ form.units_count(class="form-control input-highlight") }}
+                        {% if form.units_count.errors %}
+                            <div class="invalid-feedback d-block">{{ form.units_count.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.sale_price_per_sqm.label(class="form-label") }}
+                        {{ form.sale_price_per_sqm(class="form-control input-highlight") }}
+                        {% if form.sale_price_per_sqm.errors %}
+                            <div class="invalid-feedback d-block">{{ form.sale_price_per_sqm.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.parking_revenue.label(class="form-label") }}
+                        {{ form.parking_revenue(class="form-control") }}
+                        {% if form.parking_revenue.errors %}
+                            <div class="invalid-feedback d-block">{{ form.parking_revenue.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- B. Harmonogram -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">B. Harmonogram Projektu</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        {{ form.preparation_months.label(class="form-label") }}
+                        {{ form.preparation_months(class="form-control") }}
+                        <small class="form-text text-muted">Typowo: 6-12 miesięcy</small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.construction_months.label(class="form-label") }}
+                        {{ form.construction_months(class="form-control") }}
+                        <small class="form-text text-muted">Typowo: 18-24 miesiące</small>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.sales_months.label(class="form-label") }}
+                        {{ form.sales_months(class="form-control") }}
+                        <small class="form-text text-muted">Typowo: 18-30 miesięcy</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- C. Parametry finansowe -->
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">C. Parametry Finansowe</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        {{ form.discount_rate.label(class="form-label") }}
+                        {{ form.discount_rate(class="form-control") }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.expected_margin.label(class="form-label") }}
+                        {{ form.expected_margin(class="form-control") }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.tax_rate.label(class="form-label") }}
+                        {{ form.tax_rate(class="form-control") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- D. Kredyt -->
+        <div class="card mb-3">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">D. Finansowanie Kredytem</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ form.loan_percentage.label(class="form-label") }}
+                        {{ form.loan_percentage(class="form-control") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.loan_interest_rate.label(class="form-label") }}
+                        {{ form.loan_interest_rate(class="form-control") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.loan_provision.label(class="form-label") }}
+                        {{ form.loan_provision(class="form-control") }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.loan_months.label(class="form-label") }}
+                        {{ form.loan_months(class="form-control") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- E. Koszty jednostkowe -->
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">E. Koszty Jednostkowe</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.acquisition_costs_pct.label(class="form-label") }}
+                        {{ form.acquisition_costs_pct(class="form-control") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.construction_cost_per_sqm.label(class="form-label") }}
+                        {{ form.construction_cost_per_sqm(class="form-control") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.design_cost_per_sqm.label(class="form-label") }}
+                        {{ form.design_cost_per_sqm(class="form-control") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.infrastructure_cost_per_sqm.label(class="form-label") }}
+                        {{ form.infrastructure_cost_per_sqm(class="form-control") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.overhead_cost_per_sqm.label(class="form-label") }}
+                        {{ form.overhead_cost_per_sqm(class="form-control") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.reserve_cost_per_sqm.label(class="form-label") }}
+                        {{ form.reserve_cost_per_sqm(class="form-control") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.marketing_cost_per_sqm.label(class="form-label") }}
+                        {{ form.marketing_cost_per_sqm(class="form-control") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.sales_commission_pct.label(class="form-label") }}
+                        {{ form.sales_commission_pct(class="form-control") }}
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Wskazówka:</strong> Możesz zarządzać bazą kosztów jednostkowych w
+                    <a href="{{ url_for('costs.index') }}" target="_blank">Bazie Kosztów</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Przyciski -->
+        <div class="d-flex justify-content-between mb-4">
+            <a href="{{ url_for('calculator.index') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Anuluj
+            </a>
+            {{ form.submit(class="btn btn-primary btn-lg") }}
+        </div>
+    </form>
+</div>
+{% endblock %}

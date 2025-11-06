@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .metric-card {
+        border-left: 5px solid;
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+    .metric-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-graph-up"></i> {{ project.name }}</h1>
+            <p class="text-muted">
+                Ostatnia aktualizacja: {{ project.updated_at.strftime('%d.%m.%Y %H:%M') }}
+            </p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('calculator.edit_project', project_id=project.id) }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Edytuj
+            </a>
+            <a href="{{ url_for('calculator.sensitivity_analysis', project_id=project.id) }}" class="btn btn-info">
+                <i class="bi bi-sliders"></i> Analiza Wrażliwości
+            </a>
+            <form method="POST" action="{{ url_for('calculator.delete_project', project_id=project.id) }}" class="d-inline"
+                  onsubmit="return confirm('Czy na pewno chcesz usunąć ten projekt?');">
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Usuń
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Kluczowe wskaźniki -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card metric-card {{ 'border-success' if calculation.npv >= 0 else 'border-danger' }}">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">NPV (Wartość Bieżąca Netto)</h6>
+                    <div class="metric-value {{ 'profitable' if calculation.npv >= 0 else 'unprofitable' }}">
+                        {{ "{:,.0f}".format(calculation.npv) }} PLN
+                    </div>
+                    <small class="text-muted">{{ 'Projekt opłacalny' if calculation.npv >= 0 else 'Projekt nieopłacalny' }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card metric-card {{ 'border-success' if calculation.irr >= 15 else 'border-warning' }}">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">IRR (Wewnętrzna Stopa Zwrotu)</h6>
+                    <div class="metric-value {{ 'profitable' if calculation.irr >= 15 else 'unprofitable' }}">
+                        {{ "%.2f"|format(calculation.irr) }}%
+                    </div>
+                    <small class="text-muted">Minimum oczekiwane: 15%</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card metric-card border-primary">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Marża Brutto</h6>
+                    <div class="metric-value text-primary">
+                        {{ "{:,.0f}".format(calculation.gross_margin) }} PLN
+                    </div>
+                    <small class="text-muted">{{ "%.2f"|format((calculation.gross_margin / calculation.total_costs * 100) if calculation.total_costs > 0 else 0) }}% kosztów</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card metric-card border-info">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Wymagana Cena Sprzedaży</h6>
+                    <div class="metric-value text-info">
+                        {{ "{:,.0f}".format(calculation.required_price_per_sqm) }} PLN/m²
+                    </div>
+                    <small class="text-muted">Dla marży {{ project.expected_margin }}%</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Podsumowanie finansowe -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Podsumowanie Finansowe</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Całkowite Przychody:</strong></td>
+                            <td class="text-end">{{ "{:,.2f}".format(calculation.total_revenue) }} PLN</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Całkowite Koszty:</strong></td>
+                            <td class="text-end">{{ "{:,.2f}".format(calculation.total_costs) }} PLN</td>
+                        </tr>
+                        <tr class="border-top">
+                            <td><strong>Marża Brutto:</strong></td>
+                            <td class="text-end {{ 'profitable' if calculation.gross_margin >= 0 else 'unprofitable' }}">
+                                {{ "{:,.2f}".format(calculation.gross_margin) }} PLN
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Procent marży:</strong></td>
+                            <td class="text-end">
+                                {{ "%.2f"|format((calculation.gross_margin / calculation.total_costs * 100) if calculation.total_costs > 0 else 0) }}%
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-building"></i> Dane Projektu</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Powierzchnia działki:</strong></td>
+                            <td class="text-end">{{ "%.2f"|format(project.plot_area) }} m²</td>
+                        </tr>
+                        <tr>
+                            <td><strong>PUM (powierzchnia mieszkań):</strong></td>
+                            <td class="text-end">{{ "%.2f"|format(project.pum_area) }} m²</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Liczba lokali:</strong></td>
+                            <td class="text-end">{{ project.units_count }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cena sprzedaży:</strong></td>
+                            <td class="text-end">{{ "{:,.0f}".format(project.sale_price_per_sqm) }} PLN/m²</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Czas realizacji:</strong></td>
+                            <td class="text-end">{{ project.preparation_months + project.construction_months + project.sales_months }} miesięcy</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wykres Cash Flow -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-graph-up-arrow"></i> Przepływy Pieniężne (Cash Flow)</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="cashFlowChart" height="80"></canvas>
+        </div>
+    </div>
+
+    <!-- Szczegółowy Cash Flow (tabela) -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-table"></i> Szczegółowy Harmonogram Przepływów</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>Miesiąc</th>
+                            <th>Faza</th>
+                            <th class="text-end">Przychody</th>
+                            <th class="text-end">Koszty</th>
+                            <th class="text-end">Przepływ Netto</th>
+                            <th class="text-end">Skumulowany</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cf in cash_flow_data %}
+                        <tr class="phase-{{ cf.phase }}">
+                            <td>{{ cf.month }}</td>
+                            <td>
+                                {% if cf.phase == 'preparation' %}
+                                    <span class="badge bg-warning">Przygotowanie</span>
+                                {% elif cf.phase == 'construction' %}
+                                    <span class="badge bg-primary">Budowa</span>
+                                {% else %}
+                                    <span class="badge bg-success">Sprzedaż</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">{{ "{:,.0f}".format(cf.revenues) }}</td>
+                            <td class="text-end">{{ "{:,.0f}".format(cf.costs) }}</td>
+                            <td class="text-end {{ 'text-success' if cf.net_cash_flow >= 0 else 'text-danger' }}">
+                                {{ "{:,.0f}".format(cf.net_cash_flow) }}
+                            </td>
+                            <td class="text-end {{ 'text-success' if cf.cumulative_cash_flow >= 0 else 'text-danger' }}">
+                                {{ "{:,.0f}".format(cf.cumulative_cash_flow) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Przycisk powrotu -->
+    <div class="mb-4">
+        <a href="{{ url_for('calculator.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Powrót do listy projektów
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Dane cash flow
+    const cashFlowData = {{ cash_flow_data | tojson }};
+
+    // Przygotowanie danych dla wykresu
+    const labels = cashFlowData.map(cf => `M${cf.month}`);
+    const netFlows = cashFlowData.map(cf => cf.net_cash_flow);
+    const cumulativeFlows = cashFlowData.map(cf => cf.cumulative_cash_flow);
+
+    // Kolory według fazy
+    const backgroundColors = cashFlowData.map(cf => {
+        if (cf.phase === 'preparation') return 'rgba(255, 193, 7, 0.6)';
+        if (cf.phase === 'construction') return 'rgba(13, 110, 253, 0.6)';
+        return 'rgba(25, 135, 84, 0.6)';
+    });
+
+    // Tworzenie wykresu
+    const ctx = document.getElementById('cashFlowChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Przepływ netto',
+                    data: netFlows,
+                    backgroundColor: backgroundColors,
+                    borderColor: backgroundColors.map(c => c.replace('0.6', '1')),
+                    borderWidth: 1,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Skumulowany',
+                    data: cumulativeFlows,
+                    type: 'line',
+                    borderColor: 'rgb(220, 53, 69)',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += new Intl.NumberFormat('pl-PL', {
+                                style: 'currency',
+                                currency: 'PLN',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            }).format(context.parsed.y);
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Przepływ miesięczny (PLN)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return new Intl.NumberFormat('pl-PL', {
+                                notation: 'compact',
+                                compactDisplay: 'short'
+                            }).format(value);
+                        }
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Przepływ skumulowany (PLN)'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return new Intl.NumberFormat('pl-PL', {
+                                notation: 'compact',
+                                compactDisplay: 'short'
+                            }).format(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
